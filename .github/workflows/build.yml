@@ -10,27 +10,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Kodları çek
+    - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Python kur
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    - name: Gereklilikleri yükle
+    - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y zip unzip openjdk-17-jdk python3-pip libncurses5
+        sudo apt install -y zip unzip openjdk-17-jdk python3-pip \
+        libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+        libmtdev-dev libgl1-mesa-dev libgles2-mesa-dev \
+        libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+        libavcodec-dev libavformat-dev libswscale-dev libjpeg-dev \
+        libfreetype6-dev
         pip install --upgrade pip setuptools Cython virtualenv
         pip install buildozer
 
-    - name: APK üret
-      run: |
-        buildozer android debug
+    - name: Build APK
+      run: buildozer android debug
 
-    - name: APK'yi yükle
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-release.apk
+        name: sifre_uretici.apk
         path: bin/*.apk
