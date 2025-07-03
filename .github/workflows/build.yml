@@ -7,58 +7,48 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Depoyu klonla
+    - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Python 3.10 kurulumu
+    - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - name: Buildozer ve sistem bağımlılıklarını yükle
+    - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y zip unzip openjdk-17-jdk python3-pip \
-        libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-        libmtdev-dev libgl1-mesa-dev libgles2-mesa-dev \
-        libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-        libavcodec-dev libavformat-dev libswscale-dev \
-        libjpeg-dev libfreetype6-dev wget
+        sudo apt install -y zip unzip openjdk-17-jdk python3-pip
 
-        pip install --upgrade pip setuptools Cython virtualenv
+    - name: Download and set up Android SDK
+      run: |
+        mkdir -p $HOME/.buildozer/android/platform
+        cd $HOME/.buildozer/android/platform
+        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+        unzip cmdline-tools.zip -d cmdline-tools-temp
+        mkdir -p android-sdk/cmdline-tools/latest
+        mv cmdline-tools-temp/cmdline-tools/* android-sdk/cmdline-tools/latest/
+        export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.0" "platforms;android-33"
+
+    - name: Install Buildozer
+      run: |
+        pip install --upgrade pip setuptools cython virtualenv
         pip install buildozer
 
-    - name: Android SDK ve Build-Tools Kurulumu
-      run: |
-        mkdir -p "$HOME/.android/cmdline-tools"
-        cd "$HOME/.android/cmdline-tools"
-        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
-        unzip tools.zip
-        mv cmdline-tools latest
-        mkdir -p $HOME/.buildozer/android/platform
-        export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-        mkdir -p $ANDROID_HOME/cmdline-tools
-        mv $HOME/.android/cmdline-tools $ANDROID_HOME/cmdline-tools
-
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-
-        yes | sdkmanager --sdk_root=${ANDROID_HOME} --licenses
-        yes | sdkmanager --sdk_root=${ANDROID_HOME} \
-            "platform-tools" \
-            "platforms;android-31" \
-            "build-tools;34.0.0"
-
-    - name: APK oluştur
+    - name: Build APK
       run: |
         export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
         buildozer android debug
 
-    - name: APK dosyasını yükle
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: newsifre.apk
+        name: kivy-apk
         path: bin/*.apk
