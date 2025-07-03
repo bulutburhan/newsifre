@@ -10,45 +10,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Depoyu klonla
-      uses: actions/checkout@v4
+      - name: Repo'yu klonla
+        uses: actions/checkout@v4
 
-    - name: Python 3.10 kur
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.10
 
-    - name: Bağımlılıkları kur
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y zip unzip openjdk-17-jdk python3-pip \
-          libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-          libmtdev-dev libgl1-mesa-dev libgles2-mesa-dev libgstreamer1.0-dev \
-          libgstreamer-plugins-base1.0-dev libavcodec-dev libavformat-dev \
-          libswscale-dev libjpeg-dev libfreetype6-dev wget
+      - name: Buildozer ve bağımlılıkları yükle
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential ccache libncurses6 libtinfo5 libffi-dev libssl-dev \
+                              libsqlite3-dev zlib1g-dev libjpeg-dev libfreetype6-dev \
+                              pkg-config git zip unzip openjdk-17-jdk
 
-    - name: Android SDK ve sdkmanager kur
-      run: |
-        mkdir -p $HOME/.android/cmdline-tools
-        cd $HOME/.android/cmdline-tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
-        unzip tools.zip
-        mv cmdline-tools latest
-        export ANDROID_SDK_ROOT=$HOME/.android
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-        yes | sdkmanager --licenses
-        sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+          python -m pip install --upgrade pip
+          pip install buildozer Cython
 
-    - name: Buildozer kur ve APK üret
-      run: |
-        export ANDROID_SDK_ROOT=$HOME/.android
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-        pip install --upgrade pip setuptools Cython virtualenv
-        pip install buildozer
-        buildozer android debug
+      - name: Android SDK & cmdline-tools indir
+        run: |
+          mkdir -p /home/runner/.android/cmdline-tools
+          cd /home/runner/.android/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O sdk-tools.zip
+          unzip sdk-tools.zip -d latest
+          rm sdk-tools.zip
+          yes | /home/runner/.android/cmdline-tools/latest/bin/sdkmanager --sdk_root=/home/runner/.android "platform-tools" "build-tools;34.0.0" "platforms;android-34" "ndk;25.2.9519653"
 
-    - name: APK'yı artefakt olarak yükle
-      uses: actions/upload-artifact@v4
-      with:
-        name: newsifre.apk
-        path: bin/*.apk
+      - name: Ortam değişkenleri tanımla
+        run: |
+          echo "ANDROID_HOME=/home/runner/.android" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=/home/runner/.android/ndk/25.2.9519653" >> $GITHUB_ENV
+          echo "PATH=/home/runner/.android/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+
+      - name: APK üret
+        run: |
+          buildozer android debug
