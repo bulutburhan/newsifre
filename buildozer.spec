@@ -16,5 +16,4 @@ android.archs = arm64-v8a,armeabi-v7a
 android.minapi = 21
 android.build_tools_version = 33.0.2
 android.gradle_dependencies = androidx.appcompat:appcompat:1.0.2
-android.sdk_path = $HOME/.buildozer/android/platform/android-sdk
 android.sdk_path = /usr/local/lib/android/sdk
