@@ -1,36 +1,41 @@
-[app]
+name: Build Kivy APK
 
-title = Sifre Uretici
-package.name = sifre_uretici
-package.domain = org.burhan
-source.dir = .
-source.include_exts = py,png,jpg,kv,atlas
-version = 1.0
-icon.filename = icon.png
-orientation = portrait
-fullscreen = 0
-android.permissions = INTERNET
+on:
+  push:
+    branches:
+      - main
 
-# Python modülleri
-requirements = python3,kivy
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-# giriş noktası
-entrypoint = main.py
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-# mimariler
-android.archs = armeabi-v7a, arm64-v8a
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip unzip openjdk-17-jdk python3-pip \
+            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            libmtdev-dev libgl1-mesa-dev libgles2-mesa-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libavcodec-dev libavformat-dev libswscale-dev \
+            libjpeg-dev libfreetype6-dev libncurses5 \
+            adb
 
-# minimum Android API seviyesi
-android.minapi = 21
-android.api = 31
-android.ndk = 23b
-android.sdk = 31
-android.gradle_dependencies = 
+          pip install --upgrade pip setuptools Cython virtualenv
+          pip install buildozer
 
-# debug ve log
-log_level = 2
+          mkdir -p ~/.buildozer/android/platform
+          yes | sdkmanager --licenses || true
 
-# buildozer çıktıları
-[buildozer]
-log_level = 2
-warn_on_root = 1
+      - name: Build APK
+        run: |
+          buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sifre_uretici.apk
+          path: bin/*.apk
