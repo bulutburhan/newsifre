@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Check out repository
       uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: "3.10"
 
     - name: Install dependencies
       run: |
@@ -26,12 +26,21 @@ jobs:
         libmtdev-dev libgl1-mesa-dev libgles2-mesa-dev \
         libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
         libavcodec-dev libavformat-dev libswscale-dev libjpeg-dev \
-        libfreetype6-dev
+        libfreetype6-dev adb
         pip install --upgrade pip setuptools Cython virtualenv
         pip install buildozer
 
+    - name: Set environment vars for Android SDK
+      run: |
+        mkdir -p ~/.buildozer/android/platform
+        export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+        yes | sdkmanager --licenses
+        sdkmanager "platforms;android-31" "platform-tools" "build-tools;33.0.0" "cmdline-tools;latest" "ndk;23.1.7779620"
+
     - name: Build APK
-      run: buildozer android debug
+      run: |
+        buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
