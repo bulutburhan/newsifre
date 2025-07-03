@@ -26,18 +26,35 @@ jobs:
         libmtdev-dev libgl1-mesa-dev libgles2-mesa-dev \
         libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
         libavcodec-dev libavformat-dev libswscale-dev \
-        libjpeg-dev libfreetype6-dev
+        libjpeg-dev libfreetype6-dev wget
+
         pip install --upgrade pip setuptools Cython virtualenv
         pip install buildozer
 
-    - name: Android SDK & AIDL fix
+    - name: Android SDK ve Build-Tools Kurulumu
       run: |
-        mkdir -p ~/.buildozer/android/platform
-        yes | sdkmanager --licenses || true
-        yes | sdkmanager "build-tools;34.0.0" "platform-tools" "platforms;android-31"
+        mkdir -p "$HOME/.android/cmdline-tools"
+        cd "$HOME/.android/cmdline-tools"
+        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+        unzip tools.zip
+        mv cmdline-tools latest
+        mkdir -p $HOME/.buildozer/android/platform
+        export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+        mkdir -p $ANDROID_HOME/cmdline-tools
+        mv $HOME/.android/cmdline-tools $ANDROID_HOME/cmdline-tools
+
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+
+        yes | sdkmanager --sdk_root=${ANDROID_HOME} --licenses
+        yes | sdkmanager --sdk_root=${ANDROID_HOME} \
+            "platform-tools" \
+            "platforms;android-31" \
+            "build-tools;34.0.0"
 
     - name: APK oluştur
       run: |
+        export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
         buildozer android debug
 
     - name: APK dosyasını yükle
