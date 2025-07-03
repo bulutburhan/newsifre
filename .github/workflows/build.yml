@@ -13,44 +13,31 @@ jobs:
     - name: Depoyu klonla
       uses: actions/checkout@v4
 
-    - name: Python kur
+    - name: Python 3.10 kur
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - name: Gerekli paketleri yükle
+    - name: Bağımlılıkları yükle
       run: |
         sudo apt-get update
         sudo apt-get install -y zip unzip openjdk-17-jdk python3-pip \
           libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
           libmtdev-dev libgl1-mesa-dev libgles2-mesa-dev libgstreamer1.0-dev \
           libgstreamer-plugins-base1.0-dev libavcodec-dev libavformat-dev \
-          libswscale-dev libjpeg-dev libfreetype6-dev libncurses5 wget
+          libswscale-dev libjpeg-dev libfreetype6-dev wget
 
-    - name: Buildozer ve bağımlılıkları yükle
+    - name: Buildozer ve sanal ortam kurulumu
       run: |
         pip install --upgrade pip setuptools Cython virtualenv
         pip install buildozer
 
-    - name: Android SDK Komut Satırı Araçlarını İndir
-      run: |
-        mkdir -p ~/.buildozer/android/platform
-        cd ~/.buildozer/android/platform
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-        unzip commandlinetools-linux-*.zip -d cmdline-tools
-        mkdir -p android-sdk/cmdline-tools/latest
-        mv cmdline-tools/* android-sdk/cmdline-tools/latest
-
-    - name: Android SDK bileşenlerini kur
-      run: |
-        yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=${HOME}/.buildozer/android/platform/android-sdk "platform-tools" "build-tools;30.0.3" "platforms;android-30"
-
-    - name: APK üret
+    - name: APK üretimi
       run: |
         buildozer android debug
 
-    - name: APK dosyasını yükle
+    - name: APK'yı artefakt olarak yükle
       uses: actions/upload-artifact@v4
       with:
-        name: sifre-apk
+        name: newsifre.apk
         path: bin/*.apk
