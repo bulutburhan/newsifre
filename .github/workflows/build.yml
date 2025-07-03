@@ -7,42 +7,41 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
-      - name: Repo'yu klonla
+      - name: Kodları klonla
         uses: actions/checkout@v4
 
-      - name: Python kur
+      - name: Python 3.10.18 kur
         uses: actions/setup-python@v5
         with:
-          python-version: 3.10
+          python-version: '3.10.18'
 
-      - name: Buildozer ve bağımlılıkları yükle
+      - name: Sistem bağımlılıklarını yükle
         run: |
           sudo apt update
-          sudo apt install -y build-essential ccache libncurses6 libtinfo5 libffi-dev libssl-dev \
-                              libsqlite3-dev zlib1g-dev libjpeg-dev libfreetype6-dev \
-                              pkg-config git zip unzip openjdk-17-jdk
+          sudo apt install -y zip unzip openjdk-17-jdk wget curl libgl1-mesa-dev git python3-pip
 
-          python -m pip install --upgrade pip
-          pip install buildozer Cython
-
-      - name: Android SDK & cmdline-tools indir
+      - name: Buildozer ve Cython kur
         run: |
-          mkdir -p /home/runner/.android/cmdline-tools
-          cd /home/runner/.android/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O sdk-tools.zip
-          unzip sdk-tools.zip -d latest
-          rm sdk-tools.zip
-          yes | /home/runner/.android/cmdline-tools/latest/bin/sdkmanager --sdk_root=/home/runner/.android "platform-tools" "build-tools;34.0.0" "platforms;android-34" "ndk;25.2.9519653"
+          python -m pip install --upgrade pip setuptools Cython virtualenv
+          pip install buildozer
 
-      - name: Ortam değişkenleri tanımla
+      - name: Android SDK ve NDK ayarları
         run: |
-          echo "ANDROID_HOME=/home/runner/.android" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=/home/runner/.android/ndk/25.2.9519653" >> $GITHUB_ENV
-          echo "PATH=/home/runner/.android/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+          mkdir -p ~/.buildozer/android/platform
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+          unzip tools.zip -d ~/.buildozer/android/platform/cmdline-tools
+          mv ~/.buildozer/android/platform/cmdline-tools/cmdline-tools ~/.buildozer/android/platform/cmdline-tools/latest
 
-      - name: APK üret
+          echo "y" | ~/.buildozer/android/platform/cmdline-tools/latest/bin/sdkmanager --sdk_root=${HOME}/.buildozer/android/platform/android-sdk "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
+
+      - name: PATH ayarları
+        run: |
+          echo "$HOME/.buildozer/android/platform/android-sdk/platform-tools" >> $GITHUB_PATH
+          echo "$HOME/.buildozer/android/platform/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+      - name: APK oluştur
         run: |
           buildozer android debug
