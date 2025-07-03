@@ -19,7 +19,8 @@ warn_on_root = 1
 
 android.api = 31
 android.minapi = 21
-android.ndk = 23b
+android.ndk = 25.2.9519653
 android.private_storage = True
 android.permissions = INTERNET
+android.sdk = 33.0.2
 android.accept_sdk_license = True
