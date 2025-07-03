@@ -7,38 +7,45 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Depoyu klonla
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Python kur
-      uses: actions/setup-python@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: 3.10
 
-    - name: SDK ve Build-Tools kur (AIDL dahil)
+    - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y openjdk-17-jdk unzip wget git python3-pip zip
-        mkdir -p ~/.buildozer/android/platform
-        wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O cmdline-tools.zip
-        unzip cmdline-tools.zip -d ~/.buildozer/android/platform/
-        mv ~/.buildozer/android/platform/cmdline-tools ~/.buildozer/android/platform/tools
-        yes | ~/.buildozer/android/platform/tools/bin/sdkmanager --sdk_root=${HOME}/.buildozer/android/platform "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+        sudo apt install -y \
+          zip unzip openjdk-17-jdk \
+          python3-pip git wget \
+          build-essential \
+          ccache libffi-dev libssl-dev \
+          libsqlite3-dev libpng-dev \
+          libjpeg-dev libncurses5-dev \
+          libtiff-dev libblas-dev liblapack-dev
 
-    - name: Buildozer ve gereklilikleri yükle
+    - name: Install Buildozer
       run: |
-        pip install --upgrade pip setuptools Cython virtualenv
+        pip install --upgrade pip
+        pip install cython
         pip install buildozer
 
-    - name: APK üret
+    - name: Accept Licenses
       run: |
-        buildozer android debug
+        mkdir -p ~/.android
+        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg || true
+        yes | sdkmanager --licenses
 
-    - name: APK dosyasını yükle
+    - name: Build APK
+      run: buildozer android debug
+
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: sifre_apk.apk
+        name: my-kivy-apk
         path: bin/*.apk
